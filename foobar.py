@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from math import gcd
 
 
 ################### Level 1 ###################
@@ -564,3 +565,69 @@ def solution(entrances, exits, path):
 
 
 ##################### Level 4, Problem 2 #####################
+def solution(dimensions, your_position, trainer_position, distance):
+    """Given the dimensions of a room, your position, the trainer's position, and the distance you can shoot, 
+    return the number of times you can hit the trainer.
+    inputs: 
+        dimensions: x and y room dimensions - list of length 2
+        your_position: x and y coordinates of your position - list of length 2
+        trainer_position: x and y coordinates of the trainer's position - list of length 2
+        distance: the distance you can shoot - int"""
+    
+    # Get the dimensions of the room as their own variables
+    x_dim, y_dim = dimensions
+    x_you, y_you = your_position
+    x_target, y_target = trainer_position
+    d2 = distance**2
+
+    # Determine the distance until hitting your target in each direction and form the combinations of basis vectors
+    x_right = x_target - x_you
+    x_left =  -x_target - x_you
+    y_up = y_target - y_you
+    y_down = -y_target - y_you
+    target_combos = [(x_right, y_up), (x_right, y_down), (x_left, y_up), (x_left, y_down)]
+
+    # Determine the distance until hitting yourself in each direction and form the combinations of basis vectors
+    x_you_right = 0
+    x_you_left = -2*x_you
+    y_you_up = 0
+    y_you_down = -2*y_you
+    you_combos = [(x_you_right, y_you_up), (x_you_right, y_you_down), (x_you_left, y_you_up), (x_you_left, y_you_down)]
+
+    # Give an upper bound on the number of iterations needed to hit the target in each direction
+    x_iterations = distance//(2 * x_dim) + 1
+    y_iterations = distance//(2 * y_dim) + 1
+
+    # Create a dictionary of confirmed hits on the youself using dictionary comprehension to improve time complexity. Also gets unique directions.
+    hit_you = {(x//d,y//d):[]
+                 for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+                 for x_start,y_start in you_combos 
+                 if (x := x_start + 2*x_dim*i) is not None 
+                 if (y := y_start + 2*y_dim*j) is not None 
+                 if x**2 + y**2 <= d2
+                 if (d := abs(gcd(x,y))) != 0}                                   # Eliminate possible division by 0
+    
+    # Using the exact same code as above, just append the gcd to the list of hits. This will be used to determine the first hit
+    Not_used = {hit_you[(x//d,y//d)].append(d) 
+                 for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+                 for x_start,y_start in you_combos 
+                 if (x := x_start + 2*x_dim*i) is not None 
+                 if (y := y_start + 2*y_dim*j) is not None 
+                 if x**2 + y**2 <= d2
+                 if (d := abs(gcd(x,y))) != 0}
+
+    # Get the unique pairs of basis vectors that hit yourself first
+    confirmed = set(hit_you.keys()) 
+
+    # Using similar code as above, create a set of confirmed hits on the target 
+    hit_target = {(x//d,y//d)
+              for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+              for x_start,y_start in target_combos
+              if (x := x_start + 2*x_dim*i) is not None 
+              if (y := y_start + 2*y_dim*j) is not None 
+              if x**2 + y**2 <= d2
+              if (d := abs(gcd(x,y))) != 0
+              if (x//d,y//d) not in confirmed or min(hit_you[(x//d,y//d)]) > d}
+    
+    # Return the number of unique pairs of basis vectors that hit the target first
+    return len(hit_target)

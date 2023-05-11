@@ -237,23 +237,27 @@ def solution(entrances, exits, path):
 
 
 #make a 50 by 50 random matrix of integers
-size = 1000
-path = np.random.randint(0, 20, size=(size, size)) * np.random.randint(0, 2, size=(size, size)) * np.random.randint(0, 2, size=(size, size))
-entrances = [0]
-exits = [size-1]
+# size = 1000
+# path = np.random.randint(0, 20, size=(size, size)) * np.random.randint(0, 2, size=(size, size)) * np.random.randint(0, 2, size=(size, size))
+# entrances = [0]
+# exits = [size-1]
 
-import time
-start = time.time()
-solution1(entrances, exits, path)
-end = time.time()
-print("solution1 time:", end-start)
+# import time
+# start = time.time()
+# solution1(entrances, exits, path)
+# end = time.time()
+# print("solution1 time:", end-start)
 
-start = time.time()
-solution(entrances, exits, path)
-end = time.time()
+# start = time.time()
+# solution(entrances, exits, path)
+# end = time.time()
 
-print("solution time:", end-start)
-print(path)
+# print("solution time:", end-start)
+# print(path)
+
+
+
+
 
 
 def tester(size):
@@ -290,3 +294,81 @@ def tester(size):
 #     #print(np.array(path1))
 
 # testpath(path3)
+
+
+
+from math import gcd
+
+def solution(dimensions, your_position, trainer_position, distance):
+    x_dim, y_dim = dimensions
+    x_you, y_you = your_position
+    x_target, y_target = trainer_position
+    d2 = distance**2
+
+    if x_you <= x_target:
+        x_right = x_target - x_you
+        x_left =  -x_target - x_you
+    else:
+        x_right = 2*x_dim - x_you - x_target
+        x_left = x_target - x_you
+
+    if y_you <= y_target:
+        y_up = y_target - y_you
+        y_down = -y_target - y_you
+    else:
+        y_up = 2*y_dim - y_you - y_target
+        y_down = y_target - y_you
+
+    x_iterations = distance//(2 * x_dim) + 1
+    y_iterations = distance//(2 * y_dim) + 1
+
+    x_you_right = 2*(x_dim - x_you)
+    x_you_left = -2*x_you
+    y_you_up = 2*(y_dim - y_you)
+    y_you_down = -2*y_you
+    
+
+    you_combos = [(x_you_right, y_you_up), (x_you_right, y_you_down), (x_you_left, y_you_up), (x_you_left, y_you_down)]
+    #you_combos = [(x_you_right, y_you_up)]
+    
+    confirmed = {((x_start + 2*x_dim*i)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j)),(y_start + 2*y_dim*j)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j))):[] 
+                 for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+                 for x_start,y_start in you_combos 
+                 if (y_start + 2*y_dim*j)**2 + (x_start + 2*x_dim*i)**2 <= d2}
+
+    confirmed[(1,0)] = [x_you_right]
+    confirmed[(-1,0)] = [-x_you_left]
+    confirmed[(0,1)] = [y_you_up]
+    confirmed[(0,-1)] = [-y_you_down]
+    print((confirmed))
+    hit_you = {confirmed[((x_start + 2*x_dim*i)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j)),(y_start + 2*y_dim*j)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j)))].append(abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j))) 
+                 for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+                 for x_start,y_start in you_combos 
+                 if (y_start + 2*y_dim*j)**2 + (x_start + 2*x_dim*i)**2 <= d2}
+
+    #print(confirmed)
+    # get the keys of the confirmed dictionary, make it a set, and union that set with pairs of basis vectors
+    bigboys = set(confirmed.keys()) 
+    target_combos = [(x_right, y_up), (x_right, y_down), (x_left, y_up), (x_left, y_down)]
+    hit_target = {((x_start + 2*x_dim*i)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j)),(y_start + 2*y_dim*j)//abs(gcd(x_start + 2*x_dim*i,y_start + 2*y_dim*j))) for i in range(-x_iterations,x_iterations+1) for j in range(-y_iterations,y_iterations+1) 
+              for x_start,y_start in target_combos 
+              if (y_start + 2*y_dim*j)**2 + (x_start + 2*x_dim*i)**2 <= d2}
+        
+    return len(hit_target)
+
+
+def test():
+    assert solution([3, 2], [1, 1], [2, 1], 4) == 7
+    #assert solution([2, 5], [1, 2], [1, 4], 11) == 27
+    assert solution([23, 10], [6, 4], [3, 2], 23) == 8
+    #assert solution([1250, 1250], [1000, 1000], [500, 400], 10000) == 196
+    assert solution([10, 10], [4, 4], [3, 3], 5000) == 739323
+    #assert solution([3, 2], [1, 1], [2, 1], 7) == 19
+    assert solution([2, 3], [1, 1], [1, 2], 4) == 7
+    assert solution([3, 4], [1, 2], [2, 1], 7) == 10
+    assert solution([4, 4], [2, 2], [3, 1], 6) == 7
+    assert solution([300, 275], [150, 150], [180, 100], 500) == 9
+    #assert solution([3, 4], [1, 1], [2, 2], 500) == 54243
+
+print(solution([3, 2], [1, 1], [2, 1], 7))
+
